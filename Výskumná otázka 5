@@ -1,0 +1,72 @@
+-- Výskumná otázka 5
+-- Má výška HDP vliv na změny ve mzdách a cenách potravin? Neboli, pokud HDP vzroste výrazněji v jednom roce, 
+-- projeví se to na cenách potravin či mzdách ve stejném nebo násdujícím roce výraznějším růstem?
+
+
+create or replace table GDP_changes_by_years_CZ as-- vytvorím tabuľku, kde sa porovnáva rast HDP medzi rokmi  
+with gdp_by_years as (
+select
+	country,
+	`year`,
+	GDP,
+	lag(GDP) over (
+	order by `year`) as GDP_year_before
+from
+	t_zoltan_lebocky_project_sql_secondary_final tzlpssf
+where
+	country = "Czech Republic"
+	and `year` between 2006 and 2018)
+select
+	country,
+	year,
+	GDP,
+	GDP_year_before,
+	round((GDP - GDP_year_before)/ gdp_year_before * 100, 2) as percentage_gdp_change
+from
+	gdp_by_years;
+
+select
+	*
+from
+	gdp_changes_by_years_cz;
+
+-- využijem tabuľky z predchádzajúcéh dotazu, kde už zmena mzdy a cien je znázornená 
+
+create or replace
+view GDP_compare_salary_price_cz as 
+select
+	year,
+	percentage_gdp_change,
+	percentage_price_change,
+	percentage_salary_change,
+	lag(percentage_gdp_change) over (
+	order by year) as year_before_gdp
+from
+	GDP_changes_by_years_CZ
+join price_salary_difference
+on
+	GDP_changes_by_years_CZ.year = price_salary_difference.years
+where
+	year > (
+	select
+		MIN(year)
+	from
+		GDP_changes_by_years_CZ
+)
+;
+
+
+select
+	*
+from
+	GDP_compare_salary_price_cz;
+
+-- Výška HDP ani v daný ani v náseldujúci rok nemá priamu spojitosť s rástom cien a mzdy. Napríkald najviac HDP vzrástlo
+-- na rok 2007 a na rok 2015 pri 2007 možeme vidiet zvýšenie cien a mzdy ale na rok 2015 sa to už rozporuje.
+
+
+
+
+
+
+
