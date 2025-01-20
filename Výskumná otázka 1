@@ -1,0 +1,97 @@
+-- Výskumná otázka 1
+-- Rostou v průběhu let mzdy ve všech odvětvích, nebo v některých klesají?
+
+create or replace
+view salary_increase_decrease as -- vytvorenie view, ktoré ukazuje, v ktorých odvetviach a rokoch došlo k zníženiu mzdy
+select
+	industry_name,
+	year_salary,
+	avg_salary,
+	case
+		when avg_salary < LAG(avg_salary) over (partition by industry_name
+	order by
+		year_salary) then 'decrease'
+		when avg_salary > LAG(avg_salary) over (partition by industry_name
+	order by
+		year_salary) then 'increase'
+		else 'start year'
+	end as trend
+from
+	t_zoltan_lebocky_project_sql_primary_final
+group by
+	year_salary,
+	industry_name
+order by
+	industry_name asc,
+	year_salary asc;
+
+select
+	*
+from
+	salary_increase_decrease; 
+
+ 
+
+create or replace
+view salary_decrease_industry as 
+with 
+industries_with_trend_change as (
+select
+	industry_name,
+	year_salary
+from
+	salary_increase_decrease
+where
+	trend = 'decrease'
+	and industry_name in (
+	select
+		industry_name
+	from
+		salary_increase_decrease
+	where
+		trend = 'increase'
+        )
+group by
+	industry_name
+)
+select
+	industry_name,
+	year_salary as year_decrease
+from
+	industries_with_trend_change
+order by
+	industry_name;
+
+select
+	*
+from
+	salary_decrease_industry;
+
+-- tento pohľad ukáže na všetky odvetvia, kde sa mzdy aj znižovali a nie len navyšovali a zároven aj roky, v ktorých došlo k poklesu 
+-- náseldujúci pohľad ukáže 5 odvetví, kde sa mzdy len navyšovali
+
+with 
+industries_with_trend_change_increase as (
+select
+	industry_name,
+	year_salary
+from
+	salary_increase_decrease
+where
+	industry_name not in (
+	select
+		industry_name
+	from
+		salary_increase_decrease
+	where
+		trend = 'decrease'
+        )
+group by
+	industry_name
+)
+select
+	industry_name
+from
+	industries_with_trend_change_increase
+order by
+	industry_name;
