@@ -1,0 +1,93 @@
+-- Výskumná otázka 4 
+-- Existuje rok, ve kterém byl meziroční nárůst cen potravin výrazně vyšší než růst mezd (větší než 10 %)?
+ 
+
+create or replace
+table t_zoltan_projekt_price_changes as -- vytovrím tabuľku, kde je možné vidieť percentuálnu zmenu cien oproti predchádzajucemu roku 
+with price_by_years as (
+select
+	year_prices,
+	round(avg (avg_groceries_price), 2) as avg_groceries_price_by_year
+from
+	t_zoltan_lebocky_project_sql_primary_final tzlpspf
+group by
+	year_prices),
+price_change_by_year as (
+select
+	year_prices,
+	avg_groceries_price_by_year,
+	lag(avg_groceries_price_by_year) over (
+order by
+	year_prices) as year_before_avg_prices
+from
+	price_by_years)
+select
+	year_prices,
+	avg_groceries_price_by_year,
+	year_before_avg_prices,
+	round(((avg_groceries_price_by_year - year_before_avg_prices)* 100 / year_before_avg_prices), 2) as percentage_price_change
+from
+	price_change_by_year;
+
+select
+	*
+from
+	t_zoltan_projekt_price_changes tzppc;
+
+create or replace
+table t_zoltan_projekt_salary_changes as -- vytvorí sa ďalšia tabuľka kde je možné vidieť zmeny v mzdách
+with salary_changes as (
+select
+	year_salary,
+	round(avg(avg_salary), 2) as avg_salary_by_year
+from
+	t_Zoltan_Lebocky_project_SQL_primary_final tzlpspf1
+group by
+	year_salary
+order by
+	year_salary),
+ salary_change_by_year as (
+select
+	year_salary,
+	avg_salary_by_year,
+	lag(avg_salary_by_year) over (
+order by
+	year_salary) as year_before_avg_salary
+from
+	salary_changes)
+select
+	year_salary,
+	avg_salary_by_year,
+	year_before_avg_salary,
+	round(((avg_salary_by_year - year_before_avg_salary)* 100 / year_before_avg_salary), 2) as percentage_salary_change
+from
+	salary_change_by_year ;
+
+select
+	*
+from
+	t_zoltan_projekt_salary_changes tzpsc;
+
+-- vytvoril som dve tabuľky kde je vidieť ako % sa menia mzdy aj ceny počas rokov, náseledne sa porovná % zmena, aby sa získala odpoved na otázku 
+
+create or replace view price_salary_difference as
+select
+	year_prices as years,
+	percentage_price_change,
+	percentage_salary_change,
+	percentage_price_change - percentage_salary_change as differnece_between_changes
+from
+	t_zoltan_projekt_price_changes tzppc
+join t_zoltan_projekt_salary_changes tzpsc 
+on
+	tzppc.year_prices = tzpsc.year_salary;
+
+select
+	*
+from
+	price_salary_difference;
+
+-- v tomto view môžeme vidieť, aký bol rozdiel medzi zmenou ceny oproti zmene ku mzdám, kde nikdy rást cien potravín 
+-- neprekonal rást mzdy o 10%, najviac čo potraviny rástli oproti mzdám v roku 2012 na rok 2013 a to o 6,66%, 
+-- naopak mzdy skoro dosiahli 10 % rast oproti cenám na rok 2009 a to 9,66%
+-- najvačší rast cien potravín je o 9,63% na rok 2017 
