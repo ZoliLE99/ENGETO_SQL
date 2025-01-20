@@ -1,0 +1,51 @@
+-- Výskumná otázka 3 
+-- Která kategorie potravin zdražuje nejpomaleji (je u ní nejnižší percentuální meziroční nárůst)?
+-- pri tejto otázke je potrebné si dávať pozor na to čo sa presne pýtáme to znamená, ako si vyložíme danú otázku, ja som si zobral prvý a posledný rok a teda porovnal,
+-- že za celé obdobie, ktorá potravina najviac zdražila a ktorá najmenej zdražila 
+
+create or replace view price_differnce as -- tento view ukazuje ako sa zmenila percentuálna cena za prvý a posledný rok 
+with price_by_years as (
+    select 
+        distinct 
+        year_prices,
+        groceries_name,
+        avg_groceries_price
+    from
+        t_zoltan_lebocky_project_sql_primary_final
+    order by
+        groceries_name
+),
+year_with_first_last as (
+    select
+        groceries_name,
+        MIN(year_prices) as first_year,
+        MAX(year_prices) as last_year
+    from
+        price_by_years
+    group by
+        groceries_name
+),
+first_last_prices as (
+    select
+        a.groceries_name,
+        b.avg_groceries_price as first_price,
+        c.avg_groceries_price as last_price
+    from
+        year_with_first_last a
+    join price_by_years b on a.groceries_name = b.groceries_name and a.first_year = b.year_prices
+    join price_by_years c on a.groceries_name = c.groceries_name and a.last_year = c.year_prices
+)
+select
+    groceries_name,
+    ROUND(((last_price - first_price) * 100 / first_price), 2) as total_percentage_change
+from
+    first_last_prices
+order by
+    total_percentage_change asc;
+   
+select * 
+from price_differnce;
+
+
+-- Najnižší percentuálny nárast medzi cenou z roku 2006 a 2018 je u Cukru krystalovýho, kde to dokonca zľacnovalo o 27,52 % , celkovo potom najnižší nárst 
+-- je vidieť u Banánov a to len 7,36% a najvyšší u masla a to 98,37% 
