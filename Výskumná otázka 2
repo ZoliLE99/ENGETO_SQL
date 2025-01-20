@@ -1,0 +1,41 @@
+-- Výskumná otázka 2
+-- Kolik je možné si koupit litrů mléka a kilogramů chleba za první a poslední srovnatelné období v dostupných datech cen a mezd?
+
+create or replace view affordable_grocerie as -- vytvorím pohľad, ktorý poukáže na priemrné mzdy a ceny za daný rok na dané potraviny 
+with avg_salary_avg_price as (
+select
+	ROUND(AVG(avg_salary), 2) as avg_salary_overall,
+	year_salary,
+	groceries_name,
+	avg_groceries_price,
+	price_value,
+	price_unit
+from
+	t_zoltan_lebocky_project_sql_primary_final tzlpspf
+where
+	groceries_name in ("Mléko polotučné pasterované", "Chléb konzumní kmínový")
+		and year_salary in (2006, 2018)
+	group by
+		year_salary,
+		groceries_name,
+		avg_groceries_price,
+		price_value,
+		price_unit
+	order by
+		year_salary asc,
+		groceries_name asc)
+ select
+	groceries_name,
+	year_salary,
+	avg_salary_overall,
+	avg_groceries_price,
+	round (avg_salary_overall / avg_groceries_price,
+	2 ) as affordable_unit,
+	price_unit
+from
+	avg_salary_avg_price;
+
+select * from affordable_grocerie;
+
+-- za priemernu mzdu v roku 2006 sa mohlo kúpiť 1261,93 kg chleba a 1408,75 l mlieka 
+-- za priemernu mzdu v roku 2018 sa mohlo kúpiť 1319,32 kg chleba a 1613,53 l mlieka 
