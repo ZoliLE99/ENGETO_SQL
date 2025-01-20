@@ -1,4 +1,4 @@
-Projekt z ENGETO kurzu dátovej analýzy k splneniu požiadavku úspešného dokončenia kurzu
+Zadanie projektu z ENGETO kurzu dátovej analýzy k splneniu požiadavku úspešného dokončenia kurzu
 
 
 Úvod do projektu
