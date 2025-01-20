@@ -1,0 +1,121 @@
+-- Aby som sa dostal k finálenj tabuľke, z ktorej potrebujem čerpať pre dotazy je potreba spojit 
+-- niekoľko tabuliek a upraviť ich, aby som ich mohol poprepájať pomocou spoločných vazieb.
+-- Vytvorím tým nové tabuľky, ktoré budú menšie a bude sa s nimi lepšie pracovať. 
+
+-- Tabuľku czechia price upravím aby kvartály boli zjednocené a zároven vypočítaná priemerná mzda podľa roku následne
+-- spojím s industry branch code
+
+create or replace
+table avg_salary_czechia as
+	select 
+	industry_branch_code,
+	name as industry_name,
+	payroll_year,
+	AVG(value) as avg_salary
+from
+	czechia_payroll cp
+join czechia_payroll_industry_branch cpib
+on
+	cp.industry_branch_code = cpib.code
+where
+	value_type_code = 5958
+	and calculation_code = 100
+	and unit_code = 200
+	and industry_branch_code is not null
+group by
+	name,
+	payroll_year
+order by
+	industry_branch_code,
+	payroll_year ;
+
+select
+	*
+from
+	avg_salary_czechia;
+
+
+-- V czechia_price prepojím s czechia_price_category s tým, že dátumy nahradím rokmi a vypočíta sa
+-- priemerná cena tovaru za rok na celé Česko. 
+
+
+create or replace
+table avg_prices_czechia as 
+select
+	name,
+	category_code,
+	year(date_from) as year_range,
+	ROUND(AVG(value), 2) as avg_value,
+	price_value,
+	price_unit
+from
+	czechia_price
+join 
+    czechia_price_category
+    on
+	czechia_price.category_code = czechia_price_category.code
+where
+	region_code is null
+group by
+	category_code,
+	year_range
+order by
+	year_range,
+	category_code;
+
+select
+	*
+from
+	avg_prices_czechia ;
+
+-- Tieto dve tabuľky spojím do jednej, ktorú budem používať k dotazom 
+
+create or replace
+table t_Zoltan_Lebocky_project_SQL_primary_final as
+	select
+	industry_name,
+	avg_salary,
+	payroll_year as year_salary,	
+	year_range as year_prices,
+	name as groceries_name,
+	avg_value as avg_groceries_price,
+	price_value,
+	price_unit
+from
+	avg_salary_czechia
+join avg_prices_czechia  
+	on
+	avg_salary_czechia.payroll_year = avg_prices_czechia.year_range;
+
+select
+	*
+from
+	t_Zoltan_Lebocky_project_SQL_primary_final;
+
+-- Vytvorenie tabulky secondary_final, kde sa znázornujú dáta o Europských štátoch ako je populácia, HDP na dané roky 
+-- pomocou prepojenia krajín z tabuliek economies a countries
+
+
+create or replace
+table t_zoltan_lebocky_project_sql_secondary_final as 
+select
+	c.country,
+	e.`year`,
+	e.population,
+	e.GDP
+from
+	countries c
+join economies e 
+on
+	c.country = e.country
+where
+	continent = "Europe"
+	and e.GDP is not null
+order by
+	country,
+	year ;
+
+select
+	*
+from
+	t_zoltan_lebocky_project_sql_secondary_final tzlpssf ;
