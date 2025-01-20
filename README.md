@@ -1,7 +1,6 @@
 Projekt z ENGETO kurzu dátovej analýzy k splneniu požiadavku úspešného dokončenia kurzu
 
 
-
 Úvod do projektu
 Na vašem analytickém oddělení nezávislé společnosti, která se zabývá životní úrovní občanů, jste se dohodli, že se pokusíte odpovědět na pár definovaných výzkumných otázek, které adresují dostupnost základních potravin široké veřejnosti. Kolegové již vydefinovali základní otázky, na které se pokusí odpovědět a poskytnout tuto informaci tiskovému oddělení. Toto oddělení bude výsledky prezentovat na následující konferenci zaměřené na tuto oblast.
 
